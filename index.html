@@ -138,11 +138,42 @@
             object-fit: cover;
             z-index: 0;
         }
+
+        /* Knopje om de muziek aan/uit te zetten */
+        .music-toggle {
+            position: absolute;
+            top: 35px;
+            right: 12px;
+            z-index: 30;
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.45);
+            color: white;
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .music-toggle:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
     </style>
 </head>
 <body>
 
 <div class="story-container">
+
+    <!-- Achtergrondmuziek: zet je eigen mp3 in de map media/ -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="media/achtergrondmuziek.mp3" type="audio/mpeg">
+    </audio>
+    <button class="music-toggle" id="music-toggle" onclick="toggleMusic(event)" title="Muziek aan/uit">🔇</button>
     <div class="progress-container" id="progress-container">
         <!-- Wordt via JavaScript gevuld -->
     </div>
@@ -272,6 +303,44 @@
 
     // Zet de eerste balk op vol bij het inladen
     updateProgress();
+
+    // --- Achtergrondmuziek ---
+    const music = document.getElementById('bg-music');
+    const musicToggle = document.getElementById('music-toggle');
+
+    function syncMusicIcon() {
+        musicToggle.textContent = music.paused ? '🔇' : '🔊';
+    }
+
+    function toggleMusic(event) {
+        // Voorkomt dat de klik ook de "start bij eerste tik"-listener activeert
+        if (event) event.stopPropagation();
+        if (music.paused) {
+            music.play().catch(() => {});
+        } else {
+            music.pause();
+        }
+    }
+
+    music.addEventListener('play', syncMusicIcon);
+    music.addEventListener('pause', syncMusicIcon);
+
+    // Browsers blokkeren geluid tot de bezoeker iets aanraakt.
+    // Daarom proberen we het meteen, en anders bij de eerste tik.
+    function startMusic() {
+        music.play().then(stopWaitingForTap).catch(() => {});
+    }
+
+    function stopWaitingForTap() {
+        document.removeEventListener('click', startMusic);
+        document.removeEventListener('keydown', startMusic);
+        document.removeEventListener('touchstart', startMusic);
+    }
+
+    startMusic();
+    document.addEventListener('click', startMusic);
+    document.addEventListener('keydown', startMusic);
+    document.addEventListener('touchstart', startMusic);
 </script>
 
 </body>
