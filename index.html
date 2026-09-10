@@ -34,12 +34,13 @@
             display: flex;
             flex-direction: column;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
         }
 
         /* De voortgangsbalkjes bovenin */
         .progress-container {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             padding: 15px 10px;
             position: absolute;
             top: 0;
@@ -164,7 +165,6 @@
             background: rgba(0, 0, 0, 0.7);
         }
 
-
         /* --- Achtergrondfoto van slide 1 --- */
         .slide-bg-crop {
             position: absolute;
@@ -214,11 +214,170 @@
             justify-content: flex-end;
             padding-bottom: 60px;
         }
+
+        /* =========================================================
+           HOOFDSCHERM VAN EEN CATEGORIE (de ranglijst)
+           ========================================================= */
+        .cat-head {
+            justify-content: flex-start;
+            padding-top: 70px;
+        }
+
+        .cat-head .content {
+            text-align: left;
+            width: 100%;
+        }
+
+        .cat-head .main-text {
+            font-size: 2.1rem;
+            margin-bottom: 6px;
+        }
+
+        .cat-head .sub-text {
+            font-size: 1rem;
+            margin-bottom: 22px;
+        }
+
+        .rank-list {
+            list-style: none;
+            width: 100%;
+        }
+
+        .rank-item {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .rank-nr {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #1DB954;
+            width: 26px;
+            flex-shrink: 0;
+        }
+
+        .rank-naam {
+            font-size: 1.2rem;
+            font-weight: 900;
+            flex-grow: 1;
+            line-height: 1.2;
+        }
+
+        .rank-score {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.6);
+            white-space: nowrap;
+        }
+
+        /* =========================================================
+           SLIDE VAN EEN LOSSE ENTRY (de foto's)
+           ========================================================= */
+        .slide.entry {
+            padding: 0;
+            justify-content: flex-start;
+        }
+
+        /* Vage kopie van de eerste foto als achtergrondvulling */
+        .entry-backdrop {
+            position: absolute;
+            top: -10%; left: -10%;
+            width: 120%; height: 120%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(35px) brightness(0.4);
+            z-index: 0;
+        }
+
+        .entry-photos {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
+            display: grid;
+            gap: 5px;
+            padding: 55px 14px 10px;
+        }
+
+        .photo-cell {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .photo-cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Aantal foto's bepaalt de indeling van het raster */
+        .entry-photos[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+        .entry-photos[data-count="2"] { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+        .entry-photos[data-count="3"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+        .entry-photos[data-count="3"] .photo-cell:first-child { grid-column: span 2; }
+        .entry-photos[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+        /* Badge met "+2" als er meer foto's zijn dan er passen */
+        .more-badge {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.55);
+            font-size: 1.6rem;
+            font-weight: 900;
+        }
+
+        .entry-info {
+            position: relative;
+            z-index: 2;
+            flex: 0 0 auto;
+            padding: 12px 26px 46px;
+            text-align: center;
+        }
+
+        .entry-rank {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #1DB954;
+            margin-bottom: 4px;
+        }
+
+        .entry-naam {
+            font-size: 1.9rem;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .entry-score {
+            font-size: 1rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.65);
+            margin-top: 2px;
+        }
+
+        .entry-tekst {
+            font-size: 1rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 10px;
+            line-height: 1.35;
+        }
     </style>
 </head>
 <body>
 
-<div class="story-container">
+<div class="story-container" id="story-container">
 
     <!-- Achtergrondmuziek: zet je eigen mp3 in de map media/ -->
     <audio id="bg-music" loop preload="auto">
@@ -234,8 +393,7 @@
     <div class="tap-right" onclick="nextSlide()"></div>
 
     <!-- SLIDE 1: Intro -->
-    <!-- Voor een foto gebruik je de style="background-image: ..." op de .slide -->
-    <div class="slide active align-bottom">
+    <div class="slide active align-bottom" data-section="intro">
         <div class="slide-bg-crop"></div>
         <div class="overlay"></div>
         <div class="content">
@@ -245,62 +403,10 @@
         </div>
     </div>
 
-    <!-- SLIDE 2: Plekken -->
-    <div class="slide" style="background-image: url('media/plekken.jpg');">
-        <div class="overlay"></div>
-        <div class="content">
-            <div class="title">Top Locaties</div>
-            <div class="main-text">Plekken waar we het meest waren</div>
-            <div class="sub-text">1. Jouw kamer<br>2. De Ezelssociëteit<br>3. [Vul zelf in]</div>
-        </div>
-    </div>
+    <!-- De categorie-slides worden hier door JavaScript tussengevoegd -->
 
-    <!-- SLIDE 3: Vakanties (Met video voorbeeld) -->
-    <div class="slide">
-        <!-- Vervang deze video door een leuke video van jullie in Mexico/Londen -->
-        <video class="bg-video" autoplay loop muted playsinline>
-            <source src="media/mexico.mp4" type="video/mp4">
-        </video>
-        <div class="overlay"></div>
-        <div class="content">
-            <div class="title">Vluchtmodus</div>
-            <div class="main-text">Favoriete bestemmingen</div>
-            <div class="sub-text">Mexico staat dik op nummer 1. 🌮</div>
-        </div>
-    </div>
-
-    <!-- SLIDE 4: Gerechten -->
-    <div class="slide" style="background-image: url('media/eten.jpg');">
-        <div class="overlay"></div>
-        <div class="content">
-            <div class="title">Topchef</div>
-            <div class="main-text">Onze meest succesvolle gerechten</div>
-            <div class="sub-text">[Vul jullie favoriete gerecht in]</div>
-        </div>
-    </div>
-
-    <!-- SLIDE 5: Artiesten -->
-    <div class="slide" style="background-image: url('media/muziek.jpg');">
-        <div class="overlay"></div>
-        <div class="content">
-            <div class="title">In Sync</div>
-            <div class="main-text">Onze gedeelde artiesten</div>
-            <div class="sub-text">[Vul jullie gezamenlijke artiest in]</div>
-        </div>
-    </div>
-
-    <!-- SLIDE 6: Series -->
-    <div class="slide" style="background-image: url('media/series.jpg');">
-        <div class="overlay"></div>
-        <div class="content">
-            <div class="title">Binge Watchers</div>
-            <div class="main-text">Onze favoriete series en films</div>
-            <div class="sub-text">"Nog één aflevering dan..."</div>
-        </div>
-    </div>
-
-    <!-- SLIDE 7: De Uitnodiging -->
-    <div class="slide" style="background-color: #1DB954;"> <!-- Geen foto, maar opvallend groen -->
+    <!-- LAATSTE SLIDE: De Uitnodiging -->
+    <div class="slide" id="outro-slide" data-section="outro" style="background-color: #1DB954;">
         <div class="content">
             <div class="title">Jouw Beloning</div>
             <div class="main-text">Tijd om dit te vieren in Amsterdam!</div>
@@ -312,87 +418,389 @@
 </div>
 
 <script>
-    const slides = document.querySelectorAll('.slide');
-    const progressContainer = document.getElementById('progress-container');
-    let currentSlide = 0;
+/* =============================================================
+   HIER PAS JE ALLES AAN
+   -------------------------------------------------------------
+   Per entry zet je een "score" (minuten, uren, keren, dagen...).
+   De volgorde wordt automatisch bepaald: HOOGSTE SCORE = NUMMER 1.
+   Je hoeft dus nooit regels te verslepen, alleen het getal te
+   veranderen om iets omhoog of omlaag te schuiven.
 
-    // Maak de voortgangsbalkjes aan
-    slides.forEach((_, index) => {
+   "tekst" is jouw eigen tekstje bij die entry. Laat leeg ('')
+   als je niks wilt tonen.
+   ============================================================= */
+
+const EENHEID_ACHTER_GETAL = true; // true: "1240 uur", false: "uur 1240"
+
+const CATEGORIEEN = [
+    {
+        naam: 'Plaatsen',
+        ondertitel: 'Waar we de meeste tijd hebben doorgebracht',
+        eenheid: 'uur',
+        achtergrond: 'media/plaatsen/delft/stress diner.jpg',
+        entries: [
+            {
+                naam: 'Delft',
+                score: 2400,
+                tekst: '',
+                fotos: [
+                    'media/plaatsen/delft/delft selfie.jpeg',
+                    'media/plaatsen/delft/stress diner.jpg',
+                    'media/plaatsen/delft/gala delft.jpeg',
+                    'media/plaatsen/delft/delft geit selfie.jpeg',
+                    'media/plaatsen/delft/delft dd strakke broek.jpeg'
+                ]
+            },
+            {
+                naam: 'Zeist',
+                score: 900,
+                tekst: '',
+                fotos: [
+                    'media/plaatsen/zeist/YXNzZXRzL3Nob3djYXNlcy9iMDA0NjM0YS0xNDI2LTRmZTUtODFlYS1iMzUxM2QwYTNiYzRfdGh1bWIxMDI0LmpwZWc=.jpg'
+                ]
+            },
+            {
+                naam: 'Naarden',
+                score: 700,
+                tekst: '',
+                fotos: [
+                    'media/plaatsen/Naarden/21229416649_0538ff9eef_b.jpg'
+                ]
+            },
+            {
+                naam: 'Rotterdam',
+                score: 400,
+                tekst: '',
+                fotos: [
+                    'media/plaatsen/Rotterdam/rotterdam selfie.jpeg'
+                ]
+            },
+            {
+                naam: 'Londen',
+                score: 200,
+                tekst: '',
+                fotos: [
+                    'media/plaatsen/london/london selfie.jpeg',
+                    'media/plaatsen/london/london collage.jpeg'
+                ]
+            }
+        ]
+    },
+    {
+        naam: 'Vakanties',
+        ondertitel: 'Onze favoriete bestemmingen',
+        eenheid: 'dagen',
+        achtergrond: 'media/vakantie/mexico/IMG20260818103657.jpg',
+        entries: [
+            {
+                naam: 'Mexico',
+                score: 21,
+                tekst: '',
+                fotos: [
+                    'media/vakantie/mexico/IMG20260818103657.jpg',
+                    'media/vakantie/mexico/IMG20260821101731.jpg',
+                    'media/vakantie/mexico/IMG20260822112310.jpg',
+                    'media/vakantie/mexico/IMG20260825185020.jpg'
+                ]
+            },
+            {
+                naam: 'Champéry',
+                score: 14,
+                tekst: '',
+                fotos: [
+                    'media/vakantie/champery/champery skien.jpeg',
+                    'media/vakantie/champery/champery skien 2.jpeg',
+                    'media/vakantie/champery/champery skien 3.jpeg',
+                    'media/vakantie/champery/champery zomer.jpeg'
+                ]
+            },
+            {
+                naam: 'San Sebastián',
+                score: 7,
+                tekst: '',
+                fotos: [
+                    'media/vakantie/san sebastian/san sebastian.jpeg',
+                    'media/vakantie/san sebastian/schiphol selfie.jpeg'
+                ]
+            },
+            {
+                naam: 'Vlieland',
+                score: 5,
+                tekst: '',
+                fotos: [
+                    'media/vakantie/vlieland/vlieland selfie.jpeg',
+                    'media/vakantie/vlieland/vlieland paardrijden.jpeg'
+                ]
+            },
+            {
+                naam: 'Parijs',
+                score: 3,
+                tekst: '',
+                fotos: [
+                    'media/vakantie/paris/place dauphine.jpeg'
+                ]
+            }
+        ]
+    },
+    {
+        naam: 'Gerechten',
+        ondertitel: 'Onze meest succesvolle gerechten',
+        eenheid: 'keer gemaakt',
+        achtergrond: 'media/eten/Beef_curry_rice_003.jpg',
+        entries: [
+            {
+                naam: 'Beef curry rice',
+                score: 32,
+                tekst: '',
+                fotos: ['media/eten/Beef_curry_rice_003.jpg']
+            },
+            {
+                naam: "Domino's",
+                score: 24,
+                tekst: '',
+                fotos: ['media/eten/dominos.jpeg']
+            },
+            {
+                naam: 'Zalm uit de oven',
+                score: 18,
+                tekst: '',
+                fotos: ['media/eten/zalm uit oven.jpg']
+            },
+            {
+                naam: 'Noodle soup',
+                score: 11,
+                tekst: '',
+                fotos: ['media/eten/noodle soup.jpg']
+            }
+        ]
+    },
+    {
+        naam: 'Artiesten',
+        ondertitel: 'Onze gedeelde artiesten',
+        eenheid: 'minuten',
+        achtergrond: 'media/artiesten/taylor swift.jpg',
+        entries: [
+            {
+                naam: 'Taylor Swift',
+                score: 4820,
+                tekst: '',
+                fotos: ['media/artiesten/taylor swift.jpg']
+            },
+            {
+                naam: 'Ron van Zalmsaus',
+                score: 1290,
+                tekst: '',
+                fotos: ['media/artiesten/ron van zalmsaus.jpg']
+            }
+        ]
+    },
+    {
+        naam: 'Films en series',
+        ondertitel: 'Nog één aflevering dan...',
+        eenheid: 'uur gekeken',
+        achtergrond: 'media/films en series/background for head slide.jpg',
+        entries: [
+            {
+                naam: 'The White Lotus',
+                score: 46,
+                tekst: '',
+                fotos: ['media/films en series/White lotus.png']
+            },
+            {
+                naam: 'Harry Potter',
+                score: 38,
+                tekst: '',
+                fotos: ['media/films en series/harry potter.jpg']
+            },
+            {
+                naam: 'Twilight',
+                score: 27,
+                tekst: '',
+                fotos: ['media/films en series/twilight.jpg']
+            },
+            {
+                naam: 'Love on the Spectrum',
+                score: 15,
+                tekst: '',
+                fotos: ['media/films en series/love on the spectrum.webp']
+            }
+        ]
+    }
+];
+
+/* =============================================================
+   VANAF HIER HOEF JE NIETS MEER AAN TE PASSEN
+   ============================================================= */
+
+const storyContainer = document.getElementById('story-container');
+const outroSlide = document.getElementById('outro-slide');
+const progressContainer = document.getElementById('progress-container');
+
+// Zet spaties e.d. om zodat een pad met spaties ook werkt in CSS url()
+function cssUrl(pad) {
+    return "url('" + encodeURI(pad) + "')";
+}
+
+function scoreLabel(score, eenheid) {
+    const getal = score.toLocaleString('nl-NL');
+    return EENHEID_ACHTER_GETAL ? getal + ' ' + eenheid : eenheid + ' ' + getal;
+}
+
+// Hoogste score eerst
+function gesorteerdeEntries(categorie) {
+    return categorie.entries.slice().sort((a, b) => b.score - a.score);
+}
+
+function maakHoofdscherm(categorie, entries, sectie) {
+    const slide = document.createElement('div');
+    slide.className = 'slide cat-head';
+    slide.dataset.section = sectie;
+
+    const achtergrond = categorie.achtergrond || entries[0].fotos[0];
+
+    const items = entries.map((entry, i) => `
+                <li class="rank-item">
+                    <span class="rank-nr">${i + 1}</span>
+                    <span class="rank-naam">${entry.naam}</span>
+                    <span class="rank-score">${scoreLabel(entry.score, categorie.eenheid)}</span>
+                </li>`).join('');
+
+    slide.innerHTML = `
+        <div class="entry-backdrop" style="background-image: ${cssUrl(achtergrond)};"></div>
+        <div class="overlay"></div>
+        <div class="content">
+            <div class="title">Top ${entries.length}</div>
+            <div class="main-text">${categorie.naam}</div>
+            <div class="sub-text">${categorie.ondertitel}</div>
+            <ul class="rank-list">${items}</ul>
+        </div>`;
+
+    return slide;
+}
+
+function maakEntrySlide(categorie, entry, positie, sectie) {
+    const slide = document.createElement('div');
+    slide.className = 'slide entry';
+    slide.dataset.section = sectie;
+
+    // Maximaal 4 foto's in het raster; de rest komt als "+N" op de laatste
+    const zichtbaar = entry.fotos.slice(0, 4);
+    const rest = entry.fotos.length - zichtbaar.length;
+
+    const cellen = zichtbaar.map((foto, i) => {
+        const badge = (rest > 0 && i === zichtbaar.length - 1)
+            ? `<span class="more-badge">+${rest}</span>` : '';
+        return `<div class="photo-cell"><img src="${encodeURI(foto)}" alt="${entry.naam}" loading="lazy">${badge}</div>`;
+    }).join('');
+
+    const tekst = entry.tekst
+        ? `<div class="entry-tekst">${entry.tekst}</div>` : '';
+
+    slide.innerHTML = `
+        <div class="entry-backdrop" style="background-image: ${cssUrl(entry.fotos[0])};"></div>
+        <div class="entry-photos" data-count="${zichtbaar.length}">${cellen}</div>
+        <div class="entry-info">
+            <div class="entry-rank">#${positie} &middot; ${categorie.naam}</div>
+            <div class="entry-naam">${entry.naam}</div>
+            <div class="entry-score">${scoreLabel(entry.score, categorie.eenheid)}</div>
+            ${tekst}
+        </div>`;
+
+    return slide;
+}
+
+// Bouw alle categorie-slides en zet ze vóór de laatste slide
+CATEGORIEEN.forEach((categorie, index) => {
+    const sectie = 'cat-' + index;
+    const entries = gesorteerdeEntries(categorie);
+
+    storyContainer.insertBefore(maakHoofdscherm(categorie, entries, sectie), outroSlide);
+    entries.forEach((entry, i) => {
+        storyContainer.insertBefore(maakEntrySlide(categorie, entry, i + 1, sectie), outroSlide);
+    });
+});
+
+// Pas NA het bouwen alle slides ophalen
+const slides = Array.from(document.querySelectorAll('.slide'));
+let currentSlide = 0;
+
+// De balkjes tonen alleen de slides van het huidige onderdeel,
+// anders worden het er veel te veel en te dun.
+function updateProgress() {
+    const sectie = slides[currentSlide].dataset.section;
+    const sectieSlides = slides.filter(s => s.dataset.section === sectie);
+    const positie = sectieSlides.indexOf(slides[currentSlide]);
+
+    progressContainer.innerHTML = '';
+    sectieSlides.forEach((_, i) => {
         const bar = document.createElement('div');
         bar.className = 'progress-bar';
-        bar.innerHTML = `<div class="progress-fill" id="fill-${index}"></div>`;
+        bar.innerHTML = `<div class="progress-fill" style="width: ${i <= positie ? 100 : 0}%"></div>`;
         progressContainer.appendChild(bar);
     });
 
-    function updateProgress() {
-        slides.forEach((slide, index) => {
-            slide.classList.remove('active');
-            const fill = document.getElementById(`fill-${index}`);
-            if (index < currentSlide) {
-                fill.style.width = '100%'; // Vorige slides zijn vol
-            } else if (index === currentSlide) {
-                fill.style.width = '100%'; // Huidige slide vult
-            } else {
-                fill.style.width = '0%'; // Toekomstige slides zijn leeg
-            }
-        });
-        slides[currentSlide].classList.add('active');
+    slides.forEach(slide => slide.classList.remove('active'));
+    slides[currentSlide].classList.add('active');
+}
+
+function nextSlide() {
+    if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        updateProgress();
     }
+}
 
-    function nextSlide() {
-        if (currentSlide < slides.length - 1) {
-            currentSlide++;
-            updateProgress();
-        }
+function prevSlide() {
+    if (currentSlide > 0) {
+        currentSlide--;
+        updateProgress();
     }
+}
 
-    function prevSlide() {
-        if (currentSlide > 0) {
-            currentSlide--;
-            updateProgress();
-        }
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') nextSlide();
+    if (e.key === 'ArrowLeft') prevSlide();
+});
+
+updateProgress();
+
+// --- Achtergrondmuziek ---
+const music = document.getElementById('bg-music');
+const musicToggle = document.getElementById('music-toggle');
+
+function syncMusicIcon() {
+    musicToggle.textContent = music.paused ? '🔇' : '🔊';
+}
+
+function toggleMusic(event) {
+    // Voorkomt dat de klik ook de "start bij eerste tik"-listener activeert
+    if (event) event.stopPropagation();
+    if (music.paused) {
+        music.play().catch(() => {});
+    } else {
+        music.pause();
     }
+}
 
-    // Zet de eerste balk op vol bij het inladen
-    updateProgress();
+music.addEventListener('play', syncMusicIcon);
+music.addEventListener('pause', syncMusicIcon);
 
-    // --- Achtergrondmuziek ---
-    const music = document.getElementById('bg-music');
-    const musicToggle = document.getElementById('music-toggle');
+// Browsers blokkeren geluid tot de bezoeker iets aanraakt.
+// Daarom proberen we het meteen, en anders bij de eerste tik.
+function startMusic() {
+    music.play().then(stopWaitingForTap).catch(() => {});
+}
 
-    function syncMusicIcon() {
-        musicToggle.textContent = music.paused ? '🔇' : '🔊';
-    }
+function stopWaitingForTap() {
+    document.removeEventListener('click', startMusic);
+    document.removeEventListener('keydown', startMusic);
+    document.removeEventListener('touchstart', startMusic);
+}
 
-    function toggleMusic(event) {
-        // Voorkomt dat de klik ook de "start bij eerste tik"-listener activeert
-        if (event) event.stopPropagation();
-        if (music.paused) {
-            music.play().catch(() => {});
-        } else {
-            music.pause();
-        }
-    }
-
-    music.addEventListener('play', syncMusicIcon);
-    music.addEventListener('pause', syncMusicIcon);
-
-    // Browsers blokkeren geluid tot de bezoeker iets aanraakt.
-    // Daarom proberen we het meteen, en anders bij de eerste tik.
-    function startMusic() {
-        music.play().then(stopWaitingForTap).catch(() => {});
-    }
-
-    function stopWaitingForTap() {
-        document.removeEventListener('click', startMusic);
-        document.removeEventListener('keydown', startMusic);
-        document.removeEventListener('touchstart', startMusic);
-    }
-
-    startMusic();
-    document.addEventListener('click', startMusic);
-    document.addEventListener('keydown', startMusic);
-    document.addEventListener('touchstart', startMusic);
+startMusic();
+document.addEventListener('click', startMusic);
+document.addEventListener('keydown', startMusic);
+document.addEventListener('touchstart', startMusic);
 </script>
 
 </body>
