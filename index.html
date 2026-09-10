@@ -164,9 +164,8 @@
             background: rgba(0, 0, 0, 0.7);
         }
 
-        /* Achtergrondfoto waarvan de linkerkant 10% wordt weggesneden.
-           De foto wordt 111.11% breed gemaakt en 11.11% naar links geschoven,
-           zodat precies de linker 10% van de foto buiten beeld valt. */
+
+        /* --- Achtergrondfoto van slide 1 --- */
         .slide-bg-crop {
             position: absolute;
             top: 0;
@@ -175,18 +174,39 @@
             height: 100%;
             overflow: hidden;
             z-index: 0;
+            background-color: #000;
         }
 
+        /* Vage, uitvergrote kopie van de foto vult de randen,
+           zodat er geen zwarte balken boven en onder ontstaan. */
         .slide-bg-crop::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: -11.1111%;
-            width: 111.1111%;
-            height: 100%;
-            background-image: url('media\\slide 1\\eerste dd.jpg');
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            background-image: url('media/stress diner.jpg');
             background-size: cover;
             background-position: center;
+            filter: blur(30px) brightness(0.45);
+        }
+
+        /* De scherpe foto. Twee knoppen om aan te draaien:
+           background-size  = ZOOM (lager percentage = verder uitgezoomd)
+           background-position = UITSNEDE (eerste getal: hoger = foto verder
+           naar links, dus meer van de rechterkant in beeld) */
+        .slide-bg-crop::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('media/stress diner.jpg');
+            background-repeat: no-repeat;
+            background-size: 160% auto;
+            background-position: 27% 72%;
         }
 
         /* Tekst bovenaan de slide in plaats van in het midden */
