@@ -205,8 +205,8 @@
             height: 100%;
             background-image: url('media/slide 1/eerste dd.jpg');
             background-repeat: no-repeat;
-            background-size: 160% auto;
-            background-position: 27% 12%;
+            background-size: 140% auto;
+            background-position: 100% 15%;
         }
 
         /* Tekst onderaan de slide in plaats van in het midden */
@@ -317,24 +317,9 @@
             display: block;
         }
 
-        /* Aantal foto's bepaalt de indeling van het raster */
+        /* Eén staande foto vult de slide, twee liggende komen onder elkaar */
         .entry-photos[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .entry-photos[data-count="2"] { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
-        .entry-photos[data-count="3"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-        .entry-photos[data-count="3"] .photo-cell:first-child { grid-column: span 2; }
-        .entry-photos[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-
-        /* Badge met "+2" als er meer foto's zijn dan er passen */
-        .more-badge {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.55);
-            font-size: 1.6rem;
-            font-weight: 900;
-        }
 
         .entry-info {
             position: relative;
@@ -678,27 +663,21 @@ function maakHoofdscherm(categorie, entries, sectie) {
     return slide;
 }
 
-function maakEntrySlide(categorie, entry, positie, sectie) {
+function maakEntrySlide(categorie, entry, positie, sectie, groep, toonTekst) {
     const slide = document.createElement('div');
     slide.className = 'slide entry';
     slide.dataset.section = sectie;
 
-    // Maximaal 4 foto's in het raster; de rest komt als "+N" op de laatste
-    const zichtbaar = entry.fotos.slice(0, 4);
-    const rest = entry.fotos.length - zichtbaar.length;
+    const cellen = groep.map(foto =>
+        `<div class="photo-cell"><img src="${encodeURI(foto)}" alt="${entry.naam}" loading="lazy"></div>`
+    ).join('');
 
-    const cellen = zichtbaar.map((foto, i) => {
-        const badge = (rest > 0 && i === zichtbaar.length - 1)
-            ? `<span class="more-badge">+${rest}</span>` : '';
-        return `<div class="photo-cell"><img src="${encodeURI(foto)}" alt="${entry.naam}" loading="lazy">${badge}</div>`;
-    }).join('');
-
-    const tekst = entry.tekst
+    const tekst = (toonTekst && entry.tekst)
         ? `<div class="entry-tekst">${entry.tekst}</div>` : '';
 
     slide.innerHTML = `
-        <div class="entry-backdrop" style="background-image: ${cssUrl(entry.fotos[0])};"></div>
-        <div class="entry-photos" data-count="${zichtbaar.length}">${cellen}</div>
+        <div class="entry-backdrop" style="background-image: ${cssUrl(groep[0])};"></div>
+        <div class="entry-photos" data-count="${groep.length}">${cellen}</div>
         <div class="entry-info">
             <div class="entry-rank">#${positie} &middot; ${categorie.naam}</div>
             <div class="entry-naam">${entry.naam}</div>
@@ -709,20 +688,64 @@ function maakEntrySlide(categorie, entry, positie, sectie) {
     return slide;
 }
 
-// Bouw alle categorie-slides en zet ze vóór de laatste slide
-CATEGORIEEN.forEach((categorie, index) => {
-    const sectie = 'cat-' + index;
-    const entries = gesorteerdeEntries(categorie);
+/* Verdeelt de foto's van één entry over slides:
+   - staande (verticale) foto's krijgen elk hun eigen slide
+   - liggende (horizontale) foto's gaan met z'n tweeen onder elkaar
+   Er komen dus nooit meer dan 2 foto's op één slide. */
+function verdeelFotos(fotos, isLiggend) {
+    const liggend = fotos.filter(isLiggend);
+    const staand = fotos.filter(f => !isLiggend(f));
+    const groepen = [];
 
-    storyContainer.insertBefore(maakHoofdscherm(categorie, entries, sectie), outroSlide);
-    entries.forEach((entry, i) => {
-        storyContainer.insertBefore(maakEntrySlide(categorie, entry, i + 1, sectie), outroSlide);
+    for (let i = 0; i < liggend.length; i += 2) {
+        groepen.push(liggend.slice(i, i + 2));
+    }
+    staand.forEach(foto => groepen.push([foto]));
+
+    return groepen;
+}
+
+// Leest de echte afmetingen van een foto uit, zodat we niet hoeven te raden
+// of hij staand of liggend is.
+function meetFoto(pad) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve([pad, img.naturalWidth >= img.naturalHeight]);
+        img.onerror = () => resolve([pad, true]); // niet gevonden: behandel als liggend
+        img.src = encodeURI(pad);
     });
-});
+}
 
-// Pas NA het bouwen alle slides ophalen
-const slides = Array.from(document.querySelectorAll('.slide'));
+function bouwSlides(orientatie) {
+    const isLiggend = foto => orientatie.get(foto) !== false;
+
+    CATEGORIEEN.forEach((categorie, index) => {
+        const sectie = 'cat-' + index;
+        const entries = gesorteerdeEntries(categorie);
+
+        storyContainer.insertBefore(maakHoofdscherm(categorie, entries, sectie), outroSlide);
+
+        entries.forEach((entry, i) => {
+            verdeelFotos(entry.fotos, isLiggend).forEach((groep, g) => {
+                storyContainer.insertBefore(
+                    maakEntrySlide(categorie, entry, i + 1, sectie, groep, g === 0),
+                    outroSlide
+                );
+            });
+        });
+    });
+
+    // Pas NA het bouwen alle slides opnieuw ophalen
+    slides = Array.from(document.querySelectorAll('.slide'));
+    updateProgress();
+}
+
+let slides = Array.from(document.querySelectorAll('.slide'));
 let currentSlide = 0;
+
+// Eerst alle foto's opmeten, daarna pas de slides bouwen
+const alleFotos = CATEGORIEEN.flatMap(c => c.entries.flatMap(e => e.fotos));
+Promise.all(alleFotos.map(meetFoto)).then(paren => bouwSlides(new Map(paren)));
 
 // De balkjes tonen alleen de slides van het huidige onderdeel,
 // anders worden het er veel te veel en te dun.
