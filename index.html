@@ -163,6 +163,37 @@
         .music-toggle:hover {
             background: rgba(0, 0, 0, 0.7);
         }
+
+        /* Achtergrondfoto waarvan de linkerkant 10% wordt weggesneden.
+           De foto wordt 111.11% breed gemaakt en 11.11% naar links geschoven,
+           zodat precies de linker 10% van de foto buiten beeld valt. */
+        .slide-bg-crop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .slide-bg-crop::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -11.1111%;
+            width: 111.1111%;
+            height: 100%;
+            background-image: url('media/stress diner.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Tekst bovenaan de slide in plaats van in het midden */
+        .slide.align-top {
+            justify-content: flex-start;
+            padding-top: 80px;
+        }
     </style>
 </head>
 <body>
@@ -184,7 +215,8 @@
 
     <!-- SLIDE 1: Intro -->
     <!-- Voor een foto gebruik je de style="background-image: ..." op de .slide -->
-    <div class="slide active" style="background-image: url('media/intro-foto.jpg');">
+    <div class="slide active align-top">
+        <div class="slide-bg-crop"></div>
         <div class="overlay"></div>
         <div class="content">
             <div class="title">Jouw 2026 Wrapped</div>
