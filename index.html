@@ -317,6 +317,15 @@
             display: block;
         }
 
+        /* Foto's met uitzoomen: true tonen de hele foto in plaats van een uitsnede */
+        .photo-cell.uitgezoomd {
+            background: transparent;
+        }
+
+        .photo-cell.uitgezoomd img {
+            object-fit: contain;
+        }
+
         /* Eén staande foto vult de slide, twee liggende komen onder elkaar */
         .entry-photos[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .entry-photos[data-count="2"] { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
@@ -457,7 +466,8 @@
 <div class="story-container" id="story-container">
 
     <!-- Achtergrondmuziek: zet je eigen mp3 in de map media/ -->
-    <audio id="bg-music" loop preload="auto">
+    <!-- Geen "loop" hier: het herhalen gebeurt in JavaScript, zodat hij op 0:05 herstart -->
+    <audio id="bg-music" preload="auto">
         <source src="media/background%20music/John%20Mayer%20-%20Half%20of%20My%20Heart%20(Official%20Video).mp3" type="audio/mpeg">
     </audio>
     <button class="music-toggle" id="music-toggle" onclick="toggleMusic(event)" title="Muziek aan/uit">🔊</button>
@@ -562,7 +572,7 @@ const CATEGORIEEN = [
                 score: 100,
                 tekst: 'Hier wacht nog een bezoek op ons👀',
                 fotos: [
-                    'media/plaatsen/zeist/YXNzZXRzL3Nob3djYXNlcy9iMDA0NjM0YS0xNDI2LTRmZTUtODFlYS1iMzUxM2QwYTNiYzRfdGh1bWIxMDI0LmpwZWc=.jpg'
+                    { pad: 'media/plaatsen/zeist/YXNzZXRzL3Nob3djYXNlcy9iMDA0NjM0YS0xNDI2LTRmZTUtODFlYS1iMzUxM2QwYTNiYzRfdGh1bWIxMDI0LmpwZWc=.jpg', uitzoomen: true }
                 ]
             },
             {
@@ -586,7 +596,7 @@ const CATEGORIEEN = [
                 score: 2000,
                 tekst: '',
                 fotos: [
-                    'media/plaatsen/london/london selfie.jpeg',
+                    { pad: 'media/plaatsen/london/london selfie.jpeg', uitzoomen: true },
                     'media/plaatsen/london/london collage.jpeg'
                 ]
             }
@@ -634,7 +644,7 @@ const CATEGORIEEN = [
                 score: 7,
                 tekst: '',
                 fotos: [
-                    'media/vakantie/vlieland/vlieland selfie.jpeg',
+                    { pad: 'media/vakantie/vlieland/vlieland selfie.jpeg', uitzoomen: true },
                     'media/vakantie/vlieland/vlieland paardrijden.jpeg'
                 ]
             },
@@ -658,7 +668,7 @@ const CATEGORIEEN = [
                 naam: 'Katsu Curry ',
                 score: 32,
                 tekst: '',
-                fotos: ['media/eten/Beef_curry_rice_003.jpg']
+                fotos: [{ pad: 'media/eten/Beef_curry_rice_003.jpg', uitzoomen: true }]
             },
             {
                 naam: "Pizza",
@@ -670,13 +680,13 @@ const CATEGORIEEN = [
                 naam: 'Zalm uit de oven',
                 score: 14,
                 tekst: '',
-                fotos: ['media/eten/zalm uit oven.jpg']
+                fotos: [{ pad: 'media/eten/zalm uit oven.jpg', uitzoomen: true }]
             },
             {
                 naam: 'Noodle soup',
                 score: 12,
                 tekst: '',
-                fotos: ['media/eten/noodle soup.jpg']
+                fotos: [{ pad: 'media/eten/noodle soup.jpg', uitzoomen: true }]
             }
         ]
     },
@@ -743,6 +753,15 @@ const outroSlide = document.getElementById('outro-slide');
 const progressContainer = document.getElementById('progress-container');
 
 // Zet spaties e.d. om zodat een pad met spaties ook werkt in CSS url()
+// Een foto is óf gewoon een pad ('media/...'), óf { pad: 'media/...', uitzoomen: true }
+function fotoPad(foto) {
+    return typeof foto === 'string' ? foto : foto.pad;
+}
+
+function isUitgezoomd(foto) {
+    return typeof foto === 'object' && foto.uitzoomen === true;
+}
+
 function cssUrl(pad) {
     return "url('" + encodeURI(pad) + "')";
 }
@@ -762,7 +781,7 @@ function maakHoofdscherm(categorie, entries, sectie) {
     slide.className = 'slide cat-head';
     slide.dataset.section = sectie;
 
-    const achtergrond = categorie.achtergrond || entries[0].fotos[0];
+    const achtergrond = categorie.achtergrond || fotoPad(entries[0].fotos[0]);
 
     const items = entries.map((entry, i) => `
                 <li class="rank-item">
@@ -789,15 +808,16 @@ function maakEntrySlide(categorie, entry, positie, sectie, groep, toonTekst) {
     slide.className = 'slide entry';
     slide.dataset.section = sectie;
 
-    const cellen = groep.map(foto =>
-        `<div class="photo-cell"><img src="${encodeURI(foto)}" alt="${entry.naam}" loading="lazy"></div>`
-    ).join('');
+    const cellen = groep.map(foto => {
+        const klasse = isUitgezoomd(foto) ? 'photo-cell uitgezoomd' : 'photo-cell';
+        return `<div class="${klasse}"><img src="${encodeURI(fotoPad(foto))}" alt="${entry.naam}" loading="lazy"></div>`;
+    }).join('');
 
     const tekst = (toonTekst && entry.tekst)
         ? `<div class="entry-tekst">${entry.tekst}</div>` : '';
 
     slide.innerHTML = `
-        <div class="entry-backdrop" style="background-image: ${cssUrl(groep[0])};"></div>
+        <div class="entry-backdrop" style="background-image: ${cssUrl(fotoPad(groep[0]))};"></div>
         <div class="entry-photos" data-count="${groep.length}">${cellen}</div>
         <div class="entry-info">
             <div class="entry-rank">#${positie} &middot; ${categorie.naam}</div>
@@ -838,7 +858,7 @@ function meetFoto(pad) {
 }
 
 function bouwSlides(orientatie) {
-    const isLiggend = foto => orientatie.get(foto) !== false;
+    const isLiggend = foto => orientatie.get(fotoPad(foto)) !== false;
 
     CATEGORIEEN.forEach((categorie, index) => {
         const sectie = 'cat-' + index;
@@ -865,7 +885,7 @@ let slides = Array.from(document.querySelectorAll('.slide'));
 let currentSlide = 0;
 
 // Eerst alle foto's opmeten, daarna pas de slides bouwen
-const alleFotos = CATEGORIEEN.flatMap(c => c.entries.flatMap(e => e.fotos));
+const alleFotos = CATEGORIEEN.flatMap(c => c.entries.flatMap(e => e.fotos.map(fotoPad)));
 Promise.all(alleFotos.map(meetFoto)).then(paren => bouwSlides(new Map(paren)));
 
 // De balkjes tonen alleen de slides van het huidige onderdeel,
@@ -916,6 +936,24 @@ const musicToggle = document.getElementById('music-toggle');
 let muziekAan = true;
 music.muted = false;
 music.volume = 1;
+
+// Het nummer begint op dit aantal seconden, ook elke keer als hij opnieuw begint
+const MUZIEK_START_SECONDEN = 5;
+
+function naarStartpunt() {
+    if (music.currentTime < MUZIEK_START_SECONDEN) {
+        music.currentTime = MUZIEK_START_SECONDEN;
+    }
+}
+
+music.addEventListener('loadedmetadata', naarStartpunt);
+music.addEventListener('play', naarStartpunt);
+
+// Aan het eind terug naar het startpunt (i.p.v. naar 0:00) en verder spelen
+music.addEventListener('ended', () => {
+    music.currentTime = MUZIEK_START_SECONDEN;
+    if (muziekAan) music.play().catch(() => {});
+});
 
 function syncMusicIcon() {
     musicToggle.textContent = muziekAan ? '🔊' : '🔇';
